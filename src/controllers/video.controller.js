@@ -293,14 +293,14 @@ const updateVideo = asyncHandler(async (req, res) => {
       - `runValidators: true` ensures data validation rules are applied.
   */
   const updatedVideo = await Video.findByIdAndUpdate(
-    videoId,
+    { _id:videoId , owner:req.user._id},
     { $set: updateData },
     { new: true, runValidators: true }
   );
 
   // If the video is not found, return error.
   if (!updatedVideo) {
-    throw new ApiError(404, "Video not found");
+    throw new ApiError(404, "Video not found or user is not the author");
   }
 
   // Send a success response with the updated video details.
@@ -308,7 +308,7 @@ const updateVideo = asyncHandler(async (req, res) => {
     .status(200)
     .json(new ApiResponse(200, updatedVideo, "Video updated successfully"));
 
-  /* 
+  /*
 
     Video Update Notes:
 
@@ -326,7 +326,7 @@ const updateVideo = asyncHandler(async (req, res) => {
 
 👉 Why use `{ new: true, runValidators: true }`?
    - `new: true`: Returns the updated document immediately after modification.
-   - `runValidators: true`: Ensures any schema validation rules (like required fields) are enforced. 
+   - `runValidators: true`: Ensures any schema validation rules (like required fields) are enforced.
    
    */
 });
@@ -345,11 +345,11 @@ const deleteVideo = asyncHandler(async (req, res) => {
     - `findByIdAndDelete(videoId)`: Finds a video by its ID and removes it.
     - If the video does not exist, `deletedVideo` will be null.
   */
-  const deletedVideo = await Video.findByIdAndDelete(videoId);
+  const deletedVideo = await Video.findByIdAndDelete({ _id:videoId , owner:req.user._id});
 
   // If no video was found to delete, return a 404 error.
   if (!deletedVideo) {
-    throw new ApiError(404, "Video not found");
+    throw new ApiError(404, "Video not found or user is not the author");
   }
 
   // Send a success response with the deleted video details.
@@ -357,7 +357,7 @@ const deleteVideo = asyncHandler(async (req, res) => {
     .status(200)
     .json(new ApiResponse(200, deletedVideo, "Video deleted successfully"));
 
-  /* 
+  /*
 
   Video Deletion Notes:
 
@@ -398,6 +398,10 @@ const togglePublishStatus = asyncHandler(async (req, res) => {
   */
   const video = await Video.findById(videoId);
 
+  if(req.user._id.toString() != video.owner.toString()){
+    throw new ApiError(400,"This action is allowed for author only")
+  }
+
   if (!video) {
     throw new ApiError(404, "Video not found");
   }
@@ -422,7 +426,7 @@ const togglePublishStatus = asyncHandler(async (req, res) => {
       new ApiResponse(200, video, "Video publish status toggled successfully")
     );
 
-  /* 
+  /*
 
  Toggling Publish Status Notes:
 
