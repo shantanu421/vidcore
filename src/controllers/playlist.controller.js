@@ -46,7 +46,7 @@ const createPlaylist = asyncHandler(async (req, res) => {
     .status(201)
     .json(new ApiResponse(201, playlist, "Playlist created successfully"));
 
-  /* 
+  /*
 
  Playlist Creation Notes:
 
@@ -93,7 +93,7 @@ const getUserPlaylists = asyncHandler(async (req, res) => {
       new ApiResponse(200, playlists, "User playlists fetched successfully")
     );
 
-  /* 
+  /*
 
 Fetching User Playlists Notes:
 
@@ -144,7 +144,7 @@ const getPlaylistById = asyncHandler(async (req, res) => {
     .status(200)
     .json(new ApiResponse(200, playlist, "Playlist fetched successfully"));
 
-  /* 
+  /*
 
 Fetching a Playlist by ID - Notes:
 
@@ -170,6 +170,11 @@ const addVideoToPlaylist = asyncHandler(async (req, res) => {
   // Validate if playlistId and videoId are valid MongoDB ObjectIds.
   if (!isValidObjectId(playlistId) || !isValidObjectId(videoId)) {
     throw new ApiError(400, "Invalid playlist or video ID");
+  }
+
+  const playlist= await Playlist.findById(playlistId)
+  if(req.user._id.toString() != playlist.owner.toString()){
+      throw new ApiError(400,"Only Owner is allowed to edit their playlist")
   }
 
   /*
@@ -254,15 +259,20 @@ const removeVideoFromPlaylist = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Invalid playlist or video ID");
   }
 
+  const playlist= await Playlist.findById(playlistId)
+  if(req.user._id.toString() != playlist.owner.toString()){
+      throw new ApiError(400,"Only Owner is allowed to edit their playlist")
+  }
+
   /*
 
-    - `findByIdAndUpdate(playlistId, update, options)`: 
+    - `findByIdAndUpdate(playlistId, update, options)`:
       - Finds a playlist by its ID.
       - Updates it based on the provided modifications.
-    - `$pull`: 
+    - `$pull`:
       - Removes a specific value from an array.
       - Here, it removes `videoId` from the `videos` array.
-    - `new: true`: 
+    - `new: true`:
       - Ensures we get the updated playlist as a response.
 
   */
@@ -284,7 +294,7 @@ const removeVideoFromPlaylist = asyncHandler(async (req, res) => {
   }
 
   /*
-     Success Response: 
+     Success Response:
     - Sends back the updated playlist.
   */
   return res
@@ -322,6 +332,11 @@ const deletePlaylist = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Invalid playlist ID");
   }
 
+  const playlist= await Playlist.findById(playlistId)
+  if(req.user._id.toString() != playlist.owner.toString()){
+      throw new ApiError(400,"Only Owner is allowed to edit their playlist")
+  }
+
   /*
     Delete the playlist from the database using findByIdAndDelete.
     - If the playlist exists, it will be removed from the database.
@@ -343,7 +358,7 @@ const deletePlaylist = asyncHandler(async (req, res) => {
       new ApiResponse(200, deletedPlaylistDoc, "Playlist deleted successfully")
     );
 
-  /* 
+  /*
 
 Deleting a Playlist - Notes:
 
@@ -371,6 +386,11 @@ const updatePlaylist = asyncHandler(async (req, res) => {
   //  Step 1: Validate the playlist ID
   if (!isValidObjectId(playlistId)) {
     throw new ApiError(400, "Invalid playlist ID");
+  }
+
+  const playlist= await Playlist.findById(playlistId)
+  if(req.user._id.toString() != playlist.owner.toString()){
+      throw new ApiError(400,"Only Owner is allowed to edit their playlist")
   }
 
   //  Step 2: Ensure name and description are provided
@@ -436,3 +456,4 @@ export {
   deletePlaylist,
   updatePlaylist,
 };
+
